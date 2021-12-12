@@ -21,7 +21,7 @@ jobs:
     - name: Build
       run: env GOOS=linux GOARCH=amd64 go build -v ./...
     - name: Copy files to server
-      uses: appleboy/scp-action@v0.0.1
+      uses: appleboy/scp-action@v0.1.2
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
