@@ -39,6 +39,6 @@ jobs:
           whoami
           cd ./app
           sudo sh service.sh stop
-          sudo sh service.sh start & disown
+          export GIN_MODE=release sudo sh service.sh start & disown
           
           
