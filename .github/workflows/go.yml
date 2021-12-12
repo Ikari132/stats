@@ -27,4 +27,11 @@ jobs:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
-        script: whoami
+        script: |
+          whoami
+          scp ./stats  ubuntu@143.47.176.226:/home/ubuntu/app
+          cd ./app
+          sh service.sh stop
+          sh service.sh start
+          
+          
