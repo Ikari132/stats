@@ -39,6 +39,6 @@ jobs:
           whoami
           cd ./app
           sudo sh service.sh stop
-          sudo sh service.sh start &; disown
+          sudo sh service.sh start & disown
           
           
