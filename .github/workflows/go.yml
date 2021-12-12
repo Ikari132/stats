@@ -34,11 +34,11 @@ jobs:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
+        envs: GIN_MODE=release
         script: |
           whoami
           cd ./app
           sudo sh service.sh stop
-          export GIN_MODE=release 
           sudo nohup sh service.sh start & disown
           
           
