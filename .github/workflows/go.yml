@@ -31,7 +31,7 @@ jobs:
           whoami
           scp ./stats  ubuntu@143.47.176.226:/home/ubuntu/app
           cd ./app
-          sh service.sh stop
-          sh service.sh start
+          sudo sh service.sh stop
+          sudo sh service.sh start
           
           
