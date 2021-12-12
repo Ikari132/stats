@@ -14,7 +14,7 @@ start)
     exec ./stats &
     ;;
 stop)
-    kill $(lsof -t -i:80)
+    kill $(sudo lsof -t -i:80)
     ;;
 *)
     echo $"Usage: $0 {start|stop}"
