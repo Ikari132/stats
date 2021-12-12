@@ -20,8 +20,15 @@ jobs:
 
     - name: Build
       run: env GOOS=linux GOARCH=amd64 go build -v ./...
-      
-    - name: SSH Remote Commands
+    - name: Copy files to server
+      uses: appleboy/scp-action@v0.0.1
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        source: "stats,service.sh"
+        target: "app"
+    - name: Run backend
       uses: appleboy/ssh-action@v0.1.4
       with:
         host: ${{ secrets.HOST }}
@@ -29,9 +36,8 @@ jobs:
         key: ${{ secrets.KEY }}
         script: |
           whoami
-          scp ./stats  ubuntu@143.47.176.226:/home/ubuntu/app
           cd ./app
           sudo sh service.sh stop
-          sudo sh service.sh start
+          env GIN_MODE=release sudo nohup sh service.sh start
           
           
