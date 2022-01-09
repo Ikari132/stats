@@ -39,5 +39,5 @@ jobs:
           whoami
           cd ./app
           sudo sh service.sh stop
-          "sudo docker-compose up -d db api"
+          sudo docker-compose up -d db api
           
