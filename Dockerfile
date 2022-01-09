@@ -4,15 +4,9 @@ FROM golang:1.17-alpine
 
 WORKDIR /app
 
-COPY .env ./
-COPY go.mod ./
-COPY go.sum ./
-RUN go mod download
-
-COPY *.go ./
-
-RUN go build -o /users
+COPY ./.env ./
+COPY ./stats ./
 
 EXPOSE 80
 
-CMD [ "/users" ]
+CMD [ "./stats" ]
