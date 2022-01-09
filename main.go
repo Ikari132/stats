@@ -2,16 +2,22 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gin-gonic/gin"
 	"github.com/gocolly/colly"
+	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Users struct {
@@ -20,7 +26,26 @@ type Users struct {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	c := cron.New()
+
+	dbHost := os.Getenv("POSTGRES_HOST")
+	dbUser := os.Getenv("POSTGRES_USER")
+	dbPassword := os.Getenv("POSTGRES_PASSWORD")
+	dbName := os.Getenv("POSTGRES_DB")
+
+	dsn := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", dbHost, dbUser, dbName, dbPassword)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	db.AutoMigrate(&Log{}, &Product{})
+
+	if err != nil {
+		panic(err)
+	}
 
 	u := Users{
 		Twity: 0,
@@ -29,13 +54,21 @@ func main() {
 
 	u.Wtc = <-getChromeExtensionUsers("https://chrome.google.com/webstore/detail/working-time-counter/lakpjellnlajgbedjhejhdbkmphhfolo?utm_source=chrome-ntp-icon&hl=en")
 	u.Twity = <-getChromeExtensionUsers("https://chrome.google.com/webstore/detail/twity/mnencakcmnofdmpgmklkknklikgpodoo?utm_source=chrome-ntp-icon&hl=en")
+
 	sum := u.Wtc + u.Twity
+
+	updateProductsCount(*db, u)
+	addProductsLogs(*db, u)
 
 	c.AddFunc("@every 3h", func() {
 		u.Wtc = <-getChromeExtensionUsers("https://chrome.google.com/webstore/detail/working-time-counter/lakpjellnlajgbedjhejhdbkmphhfolo?utm_source=chrome-ntp-icon&hl=en")
 		u.Twity = <-getChromeExtensionUsers("https://chrome.google.com/webstore/detail/twity/mnencakcmnofdmpgmklkknklikgpodoo?utm_source=chrome-ntp-icon&hl=en")
 
 		sum = u.Wtc + u.Twity
+
+		updateProductsCount(*db, u)
+		addProductsLogs(*db, u)
+
 		fmt.Println("Users count from cron", sum)
 	})
 	c.Start()
@@ -44,8 +77,18 @@ func main() {
 	r.Use(CORSMiddleware())
 
 	r.GET("/stats", func(con *gin.Context) {
+		var logs []Log
+		if err := db.Order("created_at desc").Find(&logs).Error; err != nil {
+			panic(err)
+		}
+
 		con.JSON(http.StatusOK, gin.H{
-			"users": sum, "usersByProduct": u,
+			"users": sum, "usersByProduct": u, "history": logs,
+		})
+	})
+	r.GET("/health", func(con *gin.Context) {
+		con.JSON(http.StatusOK, gin.H{
+			"status": "ok",
 		})
 	})
 
@@ -112,4 +155,26 @@ func getChromeExtensionUsers(extUrl string) chan int {
 	}()
 
 	return r
+}
+func updateProductsCount(db gorm.DB, u Users) {
+	updateOrCreate(db, "Wtc", u.Wtc)
+	updateOrCreate(db, "Twity", u.Twity)
+}
+func updateOrCreate(db gorm.DB, Name string, Count int) {
+	var t Product
+	db.Where(Product{Name: Name}).FirstOrCreate(&t)
+	t.Count = Count
+	db.Save(&t)
+}
+func addProductsLogs(db gorm.DB, u Users) {
+	wtcLog := Log{
+		Count:   u.Wtc,
+		Product: "Wtc",
+	}
+	twityLog := Log{
+		Count:   u.Twity,
+		Product: "Twity",
+	}
+	db.Create(&wtcLog)
+	db.Create(&twityLog)
 }
