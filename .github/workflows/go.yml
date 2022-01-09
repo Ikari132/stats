@@ -26,7 +26,7 @@ jobs:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
-        source: "stats,service.sh"
+        source: "stats"
         target: "app"
     - name: Run backend
       uses: appleboy/ssh-action@v0.1.4
